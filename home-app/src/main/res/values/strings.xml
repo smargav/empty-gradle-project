@@ -1,0 +1,17 @@
+<resources>
+
+    <string name="app_name">My Home</string>
+    <string name="title_activity_poc">Health Engagements Home</string>
+
+    <string name="enable_device_admin_text">
+        Health Engagements requires "Device Administrator" features to work properly.<br></br>
+        Please click on "Enable Device Admin" and accept the license terms. <br></br>
+        Without accepting the license terms, the app will not work.</string>
+    <string name="activate_samsung_license_text">
+        Health Engagements device control on Samsung Phone/Tablet requires users to accept the Samsung Enterprise License.
+        <br></br>
+        Please click on "Activate License" and accept the terms and conditions in order to use the Device Control app.
+        <br></br>
+    </string>
+
+</resources>

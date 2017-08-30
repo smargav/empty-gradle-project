@@ -1,0 +1,24 @@
+<device-admin xmlns:android="http://schemas.android.com/apk/res/android" android:visible="false" >
+	<uses-policies>
+		<limit-password />
+		<watch-login />
+		<reset-password />
+		<force-lock />
+		<wipe-data />
+		<set-global-proxy />
+        <expire-password/>
+        <encrypted-storage />
+        <email-add />
+        <get-active-syncid />        
+        <email-delete />
+        <vpn-add />
+        <vpn-delete />
+        <vpn-get />
+        <delete-all />
+        <cert-inst /> 
+        <disable-camera />
+        <require-storagecard-encryption />
+        <require-device-encryption />       
+       
+	</uses-policies>
+</device-admin>
