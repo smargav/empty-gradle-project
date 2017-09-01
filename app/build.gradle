@@ -51,4 +51,6 @@ dependencies {
     compile files('libs/knox.jar')
     compile files('libs/license.jar')
     compile files('libs/rc.jar')
+    compile 'com.cocosw:bottomsheet:1.+@aar'
+
 }

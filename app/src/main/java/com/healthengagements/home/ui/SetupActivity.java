@@ -1,7 +1,6 @@
-package com.healthengagements.home;
+package com.healthengagements.home.ui;
 
 
-import android.app.Activity;
 import android.app.FragmentTransaction;
 import android.app.admin.DevicePolicyManager;
 import android.app.enterprise.license.EnterpriseLicenseManager;
@@ -11,9 +10,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.healthengagements.home.R;
+import com.healthengagements.home.utils.Constants;
+import com.smargav.api.asynctasks.ProgressAsyncTask;
 import com.smargav.api.prefs.PreferencesUtil;
 
 import org.apache.commons.lang3.StringUtils;
@@ -21,7 +24,7 @@ import org.apache.commons.lang3.StringUtils;
 /**
  * Created by amu on 18/05/15.
  */
-public class SetupActivity extends Activity {
+public class SetupActivity extends AppCompatActivity {
     private String key = "009AA6E64349E1AF73EADA06681CF278A9F593F9A28CB499F4742CC7A0590A638E878F976E9019B2B8107828D4E9A260CD5AC75D2038F2DEACC9AD8DA6F1153D";
     private DevicePolicyManager mDPM;
     private ComponentName mDeviceAdmin;
@@ -29,8 +32,9 @@ public class SetupActivity extends Activity {
 
     private static final int STEP_0 = 0;
     private static final int STEP_1 = 1;
+    public static final int STEP_COMPLETE = 2;
 
-    private static final String KEY = "stepKey";
+    public static final String KEY = "stepKey";
 
     private ELMLicenseReceiver receiver = new ELMLicenseReceiver();
 
@@ -108,14 +112,25 @@ public class SetupActivity extends Activity {
     }
 
     public void setupComplete() {
-        startActivity(new Intent(this, PhoneControlActivity.class));
-        finish();
+        PreferencesUtil.putLong(this, KEY, STEP_COMPLETE);
     }
 
     public void enableSamsungLicense() {
-        EnterpriseLicenseManager elm = EnterpriseLicenseManager
-                .getInstance(this);
-        elm.activateLicense(key);
+        new ProgressAsyncTask<Void, Integer>(this) {
+            @Override
+            public void onPostExecute(Integer result) {
+                super.onPostExecute(result);
+            }
+
+            @Override
+            protected Integer doInBackground(Void... voids) {
+                EnterpriseLicenseManager elm = EnterpriseLicenseManager
+                        .getInstance(ctx);
+                elm.activateLicense(key);
+                return SUCCESS;
+            }
+        }.execute();
+
     }
 
     class ELMLicenseReceiver extends BroadcastReceiver {

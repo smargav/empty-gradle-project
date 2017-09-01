@@ -1,4 +1,4 @@
-package com.healthengagements.home;
+package com.healthengagements.home.ui;
 
 import android.app.admin.DeviceAdminReceiver;
 import android.content.Context;

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.healthengagements.home.widgets.CheckableRelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <!--
+         We dont want to be able to click the CheckBox -
+        android:clickable="false" added.
+        CheckableRelativeLayout takes care of the toggle when clicking the row
+    -->
+
+    <com.healthengagements.home.widgets.InertCheckBox
+        android:id="@+id/myCheckBox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_centerVertical="true"
+        android:layout_margin="1dp"
+        android:background="@drawable/customcheckbox_background"
+        android:button="@drawable/customcheckbox"
+        android:focusable="false"
+        android:padding="1dp" />
+
+    <TextView
+        android:id="@+id/appItem"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_marginBottom="15dp"
+        android:layout_toLeftOf="@+id/appIcon"
+        android:layout_toRightOf="@+id/myCheckBox"
+        android:gravity="center_vertical"
+        android:padding="5dp"
+        android:text="App Name"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    <ImageView
+        android:id="@+id/appIcon"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_alignParentRight="true"
+        android:layout_centerVertical="true"
+        android:layout_marginRight="10dp"
+        android:scaleType="fitXY"
+        android:src="@mipmap/ic_launcher" />
+
+    <TextView
+        android:id="@+id/lastUpdated"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/appItem"
+        android:layout_marginLeft="10dp"
+        android:text="Last Updated: "
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/versionName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/appItem"
+        android:layout_marginLeft="20dp"
+        android:layout_toRightOf="@+id/lastUpdated"
+        android:drawablePadding="5dp"
+        android:gravity="center_horizontal"
+        android:text="NA"
+        android:textSize="12sp" />
+
+</com.healthengagements.home.widgets.CheckableRelativeLayout>
