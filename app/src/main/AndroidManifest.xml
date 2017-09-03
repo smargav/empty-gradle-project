@@ -1,6 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.healthengagements.home">
 
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
     <uses-permission android:name="android.permission.sec.ENTERPRISE_DEVICE_ADMIN" />
     <uses-permission android:name="android.permission.sec.MDM_APP_MGMT" />

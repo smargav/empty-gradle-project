@@ -4,21 +4,15 @@
     android:fitsSystemWindows="true"
     android:orientation="vertical">
 
-
-    <ListView
-        android:id="@android:id/list"
+    <GridView
+        android:id="@+id/appsGrid"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"></ListView>
+        android:layout_height="match_parent"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginTop="40dp"
+        android:numColumns="3"></GridView>
 
-    <TextView
-        android:id="@android:id/empty"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:fitsSystemWindows="true"
-        android:gravity="center_horizontal"
-        android:text="Welcome to Health Engagments \n By default it will show only HE app"
-        android:textSize="20sp" />
 
     <Button
         android:id="@+id/hiddenButton"

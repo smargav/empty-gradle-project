@@ -1,6 +1,9 @@
 package com.healthengagements.home.ui;
 
 import android.app.KeyguardManager;
+import android.app.admin.DevicePolicyManager;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
@@ -9,17 +12,25 @@ import android.support.annotation.Nullable;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.text.InputType;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
-import android.view.WindowManager;
+import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.GridView;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.cocosw.bottomsheet.BottomSheet;
 import com.healthengagements.home.R;
-import com.healthengagements.home.utils.KioskUtil;
+import com.healthengagements.home.model.AppInfo;
+import com.healthengagements.home.utils.AdminUtils;
+import com.healthengagements.home.utils.PackageUtil;
 import com.smargav.api.prefs.PreferencesUtil;
+import com.smargav.api.utils.BaseAdapter2;
+import com.smargav.api.utils.DialogUtils;
+
+import java.util.List;
 
 /**
  * Created by Amit S on 30/08/17.
@@ -33,13 +44,6 @@ public class HomeScreen extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
-
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
-                | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
-        KeyguardManager km = (KeyguardManager) getSystemService(KEYGUARD_SERVICE);
-        kl = km.newKeyguardLock("name");
-        kl.disableKeyguard();
     }
 
     @Override
@@ -51,12 +55,27 @@ public class HomeScreen extends AppCompatActivity {
             return;
         }
 
-        if (!KioskUtil.isEnabled(this)) {
-            KioskUtil.enterKioskMode(this);
+        if (!isDeviceAdminActive()) {
+            PreferencesUtil.remove(this, SetupActivity.KEY);
+            startActivity(new Intent(this, SetupActivity.class));
+            return;
         }
+
+//        if (!AdminUtils.isEnabled(this)) {
+//            AdminUtils.enterKioskMode(this);
+//        }
+        AdminUtils.initAdminRestrictions(this);
 
         initScreen();
 
+    }
+
+    private boolean isDeviceAdminActive() {
+        ComponentName mDeviceAdmin = new ComponentName(this, HEAdminReceiver.class);
+        DevicePolicyManager mDPM = (DevicePolicyManager) getSystemService(Context.DEVICE_POLICY_SERVICE);
+
+        boolean active = mDPM.isAdminActive(mDeviceAdmin);
+        return active;
     }
 
     private void initScreen() {
@@ -69,33 +88,44 @@ public class HomeScreen extends AppCompatActivity {
                 return false;
             }
         });
+
+
+        GridView listView = (GridView) findViewById(R.id.appsGrid);
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                try {
+                    AppInfo appInfo = (AppInfo) view.getTag();
+                    startActivity(getPackageManager().getLaunchIntentForPackage(appInfo.getPkgName()));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    DialogUtils.showPrompt(HomeScreen.this, "Error", "Could not launch App. Please check");
+                }
+            }
+        });
+        AppAdapter adapter = new AppAdapter(this, getHEAppsList(), R.layout.item_grid);
+        listView.setAdapter(adapter);
     }
 
-//    @Override
-//    protected void onPause() {
-//        super.onPause();
-//        KioskUtil.disableKioskMode(this);
-//    }
-//
-//
-//    private boolean pressedOnce;
-//    private long lastPressTime;
-//
-//    @Override
-//    public void onBackPressed() {
-//        if (pressedOnce) {
-//            if (System.currentTimeMillis() - lastPressTime < 1000) {
-//                KioskUtil.disableKioskMode(this);
-//            } else {
-//                pressedOnce = false;
-//                lastPressTime = 0;
-//            }
-//        } else {
-//            pressedOnce = true;
-//            lastPressTime = System.currentTimeMillis();
-//        }
-//
-//    }
+    private List<AppInfo> getHEAppsList() {
+        return PackageUtil.getUserApps(this, "com.healthengagements");
+    }
+
+    private class AppAdapter extends BaseAdapter2<AppInfo> {
+        public AppAdapter(Context context, List<AppInfo> objects, int layout) {
+            super(context, objects, layout);
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            convertView = super.getView(position, convertView, parent);
+            AppInfo info = getItemAt(position);
+            ((ImageView) convertView.findViewById(R.id.icon)).setImageDrawable(info.getAppIcon());
+            ((TextView) convertView.findViewById(R.id.name)).setText(info.getAppName());
+            convertView.setTag(info);
+            return convertView;
+        }
+    }
 
 
     @Override
@@ -103,18 +133,8 @@ public class HomeScreen extends AppCompatActivity {
 
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.home, menu);
-        return super.onCreateOptionsMenu(menu);
-    }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        askPassword(item.getItemId());
-        return super.onOptionsItemSelected(item);
-    }
-
+    //********** Menu Handler.
     private void askPassword(final int id) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         final EditText text = new EditText(this);
@@ -141,12 +161,12 @@ public class HomeScreen extends AppCompatActivity {
 
     private void handleAction(int which) {
         switch (which) {
-            case R.id.disableKiosk:
-                KioskUtil.disableKioskMode(this);
-                break;
-            case R.id.enableKiosk:
-                KioskUtil.enterKioskMode(this);
-                break;
+//            case R.id.disableKiosk:
+//                AdminUtils.disableKioskMode(this);
+//                break;
+//            case R.id.enableKiosk:
+//                AdminUtils.enterKioskMode(this);
+//                break;
             case R.id.apps:
                 startActivity(new Intent(HomeScreen.this, SystemAppsDeleteActivity.class));
                 break;

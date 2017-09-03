@@ -28,7 +28,7 @@ public class HEAdminReceiver extends DeviceAdminReceiver {
 
 	@Override
 	public CharSequence onDisableRequested(Context context, Intent intent) {
-		return "Smargav Device Control will not work if Device Administrator is disabled.";
+		return "The app will not work if Device Administrator is disabled.";
 	}
 
 	@Override

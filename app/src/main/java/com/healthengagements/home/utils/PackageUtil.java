@@ -38,7 +38,12 @@ public class PackageUtil {
         List<ApplicationInfo> packages = pm
                 .getInstalledApplications(flags);
 
+        String thisPackage = ctx.getPackageName();
         for (ApplicationInfo appInfo : packages) {
+
+            if (StringUtils.equalsIgnoreCase(appInfo.packageName, thisPackage)) {
+                continue;
+            }
 
             AppInfo pkg = new AppInfo(appInfo.packageName);
             pkg.setLastUpdated(null);
@@ -117,6 +122,32 @@ public class PackageUtil {
             }
         });
         return userApps;
+    }
+
+    public static List<AppInfo> getUserApps(Context ctx, String filter) {
+        List<AppInfo> userApps = getPackagesList(ctx);
+
+        List<AppInfo> filteredApps = new ArrayList<>();
+
+        for (AppInfo app : userApps) {
+            if (StringUtils.contains(app.getPkgName(), filter)) {
+                filteredApps.add(app);
+            }
+        }
+
+
+        Collections.sort(filteredApps, new Comparator<AppInfo>() {
+            @Override
+            public int compare(AppInfo lhs, AppInfo rhs) {
+                if (StringUtils.isBlank(lhs.getAppName())) {
+                    return 1;
+                } else if (StringUtils.isBlank(rhs.getAppName())) {
+                    return -1;
+                }
+                return lhs.getAppName().compareTo(rhs.getAppName());
+            }
+        });
+        return filteredApps;
     }
 
     private static boolean isAllowedApp(ApplicationInfo pkgInfo) {

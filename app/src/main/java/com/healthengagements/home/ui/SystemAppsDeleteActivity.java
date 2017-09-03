@@ -36,7 +36,6 @@ public class SystemAppsDeleteActivity extends AppCompatActivity {
         setContentView(R.layout.apps_list);
         mEDM = new EnterpriseDeviceManager(this);
         appPolicy = mEDM.getApplicationPolicy();
-
         initList();
     }
 
