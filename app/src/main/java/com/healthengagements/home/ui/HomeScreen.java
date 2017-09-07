@@ -2,11 +2,14 @@ package com.healthengagements.home.ui;
 
 import android.app.KeyguardManager;
 import android.app.admin.DevicePolicyManager;
+import android.app.enterprise.license.EnterpriseLicenseManager;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
 import android.provider.Settings;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AlertDialog;
@@ -25,10 +28,15 @@ import com.cocosw.bottomsheet.BottomSheet;
 import com.healthengagements.home.R;
 import com.healthengagements.home.model.AppInfo;
 import com.healthengagements.home.utils.AdminUtils;
+import com.healthengagements.home.utils.Constants;
 import com.healthengagements.home.utils.PackageUtil;
+import com.smargav.api.logger.AppLogger;
 import com.smargav.api.prefs.PreferencesUtil;
 import com.smargav.api.utils.BaseAdapter2;
 import com.smargav.api.utils.DialogUtils;
+import com.smargav.api.utils.GsonUtil;
+
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 
@@ -39,6 +47,8 @@ import java.util.List;
 public class HomeScreen extends AppCompatActivity {
 
     private KeyguardManager.KeyguardLock kl;
+    private Handler handler = new Handler();
+    private ELMLicenseReceiver elmLicenseReceiver = new ELMLicenseReceiver();
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -50,30 +60,33 @@ public class HomeScreen extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
 
-        if (PreferencesUtil.getLong(this, SetupActivity.KEY, 0) != SetupActivity.STEP_COMPLETE) {
-            startActivity(new Intent(this, SetupActivity.class));
-            return;
-        }
-
         if (!isDeviceAdminActive()) {
             PreferencesUtil.remove(this, SetupActivity.KEY);
             startActivity(new Intent(this, SetupActivity.class));
             return;
         }
 
-//        if (!AdminUtils.isEnabled(this)) {
-//            AdminUtils.enterKioskMode(this);
-//        }
-        AdminUtils.initAdminRestrictions(this);
+
+        try {
+            AdminUtils.initAdminRestrictions(this);
+        } catch (Exception e) {
+            AppLogger.e(getClass(), e);
+        }
 
         initScreen();
+
+    }
+
+
+    @Override
+    protected void onPause() {
+        super.onPause();
 
     }
 
     private boolean isDeviceAdminActive() {
         ComponentName mDeviceAdmin = new ComponentName(this, HEAdminReceiver.class);
         DevicePolicyManager mDPM = (DevicePolicyManager) getSystemService(Context.DEVICE_POLICY_SERVICE);
-
         boolean active = mDPM.isAdminActive(mDeviceAdmin);
         return active;
     }
@@ -96,7 +109,11 @@ public class HomeScreen extends AppCompatActivity {
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                 try {
                     AppInfo appInfo = (AppInfo) view.getTag();
-                    startActivity(getPackageManager().getLaunchIntentForPackage(appInfo.getPkgName()));
+                    if ("com.android.settings".equalsIgnoreCase(appInfo.getPkgName())) {
+                        showNetworkSettingsDialog();
+                    } else {
+                        startActivity(getPackageManager().getLaunchIntentForPackage(appInfo.getPkgName()));
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                     DialogUtils.showPrompt(HomeScreen.this, "Error", "Could not launch App. Please check");
@@ -107,8 +124,30 @@ public class HomeScreen extends AppCompatActivity {
         listView.setAdapter(adapter);
     }
 
+    private void showNetworkSettingsDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setItems(new String[]{"WiFi Settings", "Bluetooth", "Mobile Network"}, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                switch (i) {
+                    case 0:
+                        startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));
+                        break;
+                    case 1:
+                        startActivity(new Intent(Settings.ACTION_BLUETOOTH_SETTINGS));
+                        break;
+                    case 2:
+                        startActivity(new Intent(Settings.ACTION_NETWORK_OPERATOR_SETTINGS));
+                        break;
+                }
+            }
+        }).create().show();
+    }
+
     private List<AppInfo> getHEAppsList() {
-        return PackageUtil.getUserApps(this, "com.healthengagements");
+        List<AppInfo> appInfos = PackageUtil.getUserApps(this, "com.healthengagements");
+
+        return appInfos;
     }
 
     private class AppAdapter extends BaseAdapter2<AppInfo> {
@@ -161,12 +200,6 @@ public class HomeScreen extends AppCompatActivity {
 
     private void handleAction(int which) {
         switch (which) {
-//            case R.id.disableKiosk:
-//                AdminUtils.disableKioskMode(this);
-//                break;
-//            case R.id.enableKiosk:
-//                AdminUtils.enterKioskMode(this);
-//                break;
             case R.id.apps:
                 startActivity(new Intent(HomeScreen.this, SystemAppsDeleteActivity.class));
                 break;
@@ -178,6 +211,42 @@ public class HomeScreen extends AppCompatActivity {
 
 
         }
+    }
+
+
+    class ELMLicenseReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (EnterpriseLicenseManager.ACTION_LICENSE_STATUS.equals(action)) {
+
+                String result = intent
+                        .getStringExtra(EnterpriseLicenseManager.EXTRA_LICENSE_STATUS);
+                boolean isAccepted = StringUtils.equalsIgnoreCase("success",
+                        result);
+                PreferencesUtil.putBoolean(context, Constants.LICENSE_ACCEPTED,
+                        isAccepted);
+
+                if (!isAccepted) {
+                    PreferencesUtil.remove(HomeScreen.this, SetupActivity.KEY);
+                    startActivity(new Intent(HomeScreen.this, SetupActivity.class));
+                    showToast(GsonUtil.gson.toJson(intent));
+                    AppLogger.e(getClass(), "Error:" + GsonUtil.gson.toJson(intent));
+                } else {
+                    AdminUtils.initAdminRestrictions(HomeScreen.this);
+                }
+            }
+        }
+    }
+
+    private void showToast(final String msg) {
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                DialogUtils.showPrompt(HomeScreen.this, "Error", msg);
+            }
+        });
     }
 
 

@@ -10,14 +10,17 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.Toast;
 
 import com.healthengagements.home.R;
 import com.healthengagements.home.utils.Constants;
-import com.smargav.api.asynctasks.ProgressAsyncTask;
+import com.smargav.api.logger.AppLogger;
 import com.smargav.api.prefs.PreferencesUtil;
+import com.smargav.api.utils.DialogUtils;
+import com.smargav.api.utils.GsonUtil;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -25,7 +28,8 @@ import org.apache.commons.lang3.StringUtils;
  * Created by amu on 18/05/15.
  */
 public class SetupActivity extends AppCompatActivity {
-    private String key = "009AA6E64349E1AF73EADA06681CF278A9F593F9A28CB499F4742CC7A0590A638E878F976E9019B2B8107828D4E9A260CD5AC75D2038F2DEACC9AD8DA6F1153D";
+
+
     private DevicePolicyManager mDPM;
     private ComponentName mDeviceAdmin;
     static final int RESULT_ENABLE = 1;
@@ -37,6 +41,7 @@ public class SetupActivity extends AppCompatActivity {
     public static final String KEY = "stepKey";
 
     private ELMLicenseReceiver receiver = new ELMLicenseReceiver();
+    private Handler handler = new Handler();
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -116,27 +121,13 @@ public class SetupActivity extends AppCompatActivity {
     }
 
     public void enableSamsungLicense() {
-        new ProgressAsyncTask<Void, Integer>(this) {
-            @Override
-            public void onPostExecute(Integer result) {
-                super.onPostExecute(result);
-            }
-
-            @Override
-            protected Integer doInBackground(Void... voids) {
-                EnterpriseLicenseManager elm = EnterpriseLicenseManager
-                        .getInstance(ctx);
-                elm.activateLicense(key);
-                return SUCCESS;
-            }
-        }.execute();
-
+        EnterpriseLicenseManager elm = EnterpriseLicenseManager
+                .getInstance(this);
+        elm.activateLicense(Constants.LICENSE_KEY);
     }
 
     class ELMLicenseReceiver extends BroadcastReceiver {
-        void showToast(Context context, CharSequence msg) {
-            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show();
-        }
+
 
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -152,10 +143,24 @@ public class SetupActivity extends AppCompatActivity {
 
                 if (isAccepted) {
                     setupComplete();
+                } else {
+                    AppLogger.e(getClass(), GsonUtil.gson.toJson(intent));
+                    showToast("Error: " + GsonUtil.gson.toJson(intent));
                 }
             } else if (HEAdminReceiver.ACTION.equals(action)) {
                 goToStep1();
             }
         }
+    }
+
+
+    private void showToast(final String msg) {
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                DialogUtils.showPrompt(SetupActivity.this, "Error", msg);
+            }
+        });
+
     }
 }

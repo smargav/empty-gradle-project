@@ -60,7 +60,7 @@ public class PackageUtil {
                 pkg.setLastUpdated(c.getTime());
 
             } catch (NameNotFoundException e1) {
-                e1.printStackTrace();
+                //e1.printStackTrace();
             }
             if (appInfo.labelRes != 0) {
                 CharSequence label = null;
@@ -131,6 +131,10 @@ public class PackageUtil {
 
         for (AppInfo app : userApps) {
             if (StringUtils.contains(app.getPkgName(), filter)) {
+                filteredApps.add(app);
+            }
+
+            if (StringUtils.contains(app.getPkgName(), "com.android.settings")) {
                 filteredApps.add(app);
             }
         }
